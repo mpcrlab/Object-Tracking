@@ -14,7 +14,7 @@ class Rover(Rover20):
         self.quit = False
         self.image = None
         self.run()
-        rover.close()
+        self.close()
 
 
     def run(self):
@@ -28,6 +28,7 @@ class Rover(Rover20):
              # Take each frame
             frame = self.image
 
+            imgHeight,imgWidth, imgChannels = frame.shape
             # Convert BGR to HSV
             hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
 
@@ -98,46 +99,51 @@ class Rover(Rover20):
                 #Find the moments of the first contour
                 cnt = []
                 M = []
-                for i in range(1):
+                highestArea = 0
+                for i in range(len(Pcontours)):
                     cnt.append(Pcontours[i])
                     M.append(cv2.moments(cnt[i]))
+                    cntArea = cv2.contourArea(cnt[i])
+                    if cntArea > highestArea:
+                        highestArea = cntArea
+                        biggestCnt = i
                 # Use the moments to find the center x and center y
-                    cx = int(M[i]['m10']/M[i]['m00'])
-                    cy = int(M[i]['m01']/M[i]['m00'])
+                cx = int(M[biggestCnt]['m10']/M[biggestCnt]['m00'])
+                cy = int(M[biggestCnt]['m01']/M[biggestCnt]['m00'])
 
                 #Convert cx and cx to strings for output
-                    scx = str(cx)
-                    scy = str(cy)
-                    location = "( " + scx + ", " + scy + ")"
+                scx = str(cx)
+                scy = str(cy)
+                location = "( " + scx + ", " + scy + ")"
 
                 # put text onto the final image at the center of the contour
-                    font = cv2.FONT_HERSHEY_SIMPLEX
-                    cv2.putText(img,location,(cx,cy), font, .5,(255,255,255),2,cv2.LINE_AA)
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                cv2.putText(img,location,(cx,cy), font, .5,(255,255,255),2,cv2.LINE_AA)
 
                 #Change contour outline to Red if the center is outside the middle third
                 # Or green if it is inside the middle third
-                    if cx <= 106:
-                        contourColor = ((0,0,255))
-                        self.set_wheel_treads(0,1)
-                    elif cx > 106 and cx <= 212:
-                        contourColor = ((0,255,0))
-                        self.set_wheel_treads(1,1)
-                    else:
-                        print scx
-                        contourColor = ((0,0,255))
-                        self.set_wheel_treads(1,0)
+                if cx <= imgWidth / 3:
+                    contourColor = ((0,0,255))
+                    self.set_wheel_treads(0,1)
+                elif cx > imgWidth / 3 and cx <= 2 * imgWidth / 3:
+                    contourColor = ((0,255,0))
+                    self.set_wheel_treads(1,1)
+                else:
+                    contourColor = ((0,0,255))
+                    self.set_wheel_treads(1,0)
 
                     #Draw contours onto the final image
-                    img = cv2.drawContours(img, Pcontours[i], -1, contourColor, 3)
+                img = cv2.drawContours(img, Pcontours[i], -1, contourColor, 3)
 
                     #Draw center point
-                    img = cv2.circle(img,(cx,cy), 5, (255,0,0), -1)
+                img = cv2.circle(img,(cx,cy), 5, (255,0,0), -1)
 
             else:
                 self.set_wheel_treads(0,0)
 
 
-            if len(Ocontours) != 0:
+            #Orange is not up to date so I disabled it
+            if len(Ocontours) == -1 :
                  #Find the moments of the first contour
                 cnt = []
                 M = []
@@ -174,8 +180,8 @@ class Rover(Rover20):
 
 
             #Break the screen into thirds
-            img = cv2.line(img,(212,0),(212,511),(255,0,0),5)
-            img = cv2.line(img,(106,0),(106,511),(255,0,0),5)
+            img = cv2.line(img,(imgWidth/3,0),(imgWidth/3,511),(255,0,0),5)
+            img = cv2.line(img,(2*imgWidth/3,0),(2*imgWidth/3,511),(255,0,0),5)
 
 
 
